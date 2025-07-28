@@ -51,7 +51,22 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
     
     // Calculate productivity trends
     const activeProjects = analysisResults.filter(repo => (repo.totalCommits || 0) > 0);
-    const inactiveProjects = analysisResults.length - activeProjects.length;
+    
+    // Calculate most productive day of week
+    const dayCommits = {};
+    analysisResults.forEach(repo => {
+      if (repo.weeklyData) {
+        repo.weeklyData.forEach(week => {
+          const day = moment(week.week).format('dddd');
+          dayCommits[day] = (dayCommits[day] || 0) + (week.commits || 0);
+        });
+      }
+    });
+    const mostProductiveDay = Object.keys(dayCommits).reduce((a, b) => 
+      dayCommits[a] > dayCommits[b] ? a : b, 'N/A');
+    
+    // Calculate productivity score (commits per hour ratio)
+    const productivityScore = avgCommitsPerHour > 0 ? Math.min(100, Math.round(avgCommitsPerHour * 10)) : 0;
     
     // Find most recent activity
     const mostRecentActivity = analysisResults.reduce((latest, repo) => {
@@ -69,7 +84,8 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
       avgCommitsPerProject,
       avgCommitsPerHour,
       activeProjects: activeProjects.length,
-      inactiveProjects,
+      mostProductiveDay,
+      productivityScore,
       mostRecentActivity,
       projectCount: analysisResults.length,
     };
@@ -262,12 +278,12 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.light', borderRadius: 2, color: 'warning.contrastText' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                    {metrics.inactiveProjects}
+                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'secondary.light', borderRadius: 2, color: 'secondary.contrastText' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {metrics.mostProductiveDay}
                   </Typography>
                   <Typography variant="body2">
-                    Inactive
+                    Best Day
                   </Typography>
                 </Box>
               </Grid>

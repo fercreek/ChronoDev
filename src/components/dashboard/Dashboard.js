@@ -5,11 +5,9 @@ import {
   Grid,
   Card,
   CardContent,
-  TextField,
   Button,
   Box,
   Alert,
-  CircularProgress,
   Stack,
   AppBar,
   Toolbar
@@ -18,9 +16,7 @@ import {
   TrendingUp,
   Code,
   Schedule,
-  Warning,
   GitHub as GitHubIcon,
-  Analytics as AnalyticsIcon,
   Commit as CommitIcon,
   Settings as SettingsIcon,
   Assessment as AssessmentIcon,
@@ -29,190 +25,101 @@ import {
 } from '@mui/icons-material';
 
 import { useDashboard } from '../../hooks/useDashboard';
-import { RepositorySelector, ProjectCard } from '../repository';
+import { ProjectCard } from '../repository';
 import { WeeklyChart } from '../charts';
 import CollapsibleSection from '../common/CollapsibleSection';
 import ThemeToggle from '../common/ThemeToggle';
 import AdvancedMetrics from './AdvancedMetrics';
+import { ConfigurationView } from '../configuration';
 
 const Dashboard = () => {
+  const [currentView, setCurrentView] = React.useState('dashboard');
+  
   const {
     // State
-    repositories,
-    selectedRepos,
-    githubToken,
-    githubUsername,
-    author,
-    dateRange,
     analysisResults,
-    loading,
     error,
     totalProjects,
     totalCommits,
     totalHours,
-    inactiveProjects,
-    
-    // Actions
-    loadGitHubRepositories,
-    analyzeRepositories,
-    updateField,
-    updateFields
   } = useDashboard();
 
-  // Handler functions for UI interactions
-  const handleFieldChange = (field) => (event) => {
-    updateField(field, event.target.value);
+  // Calculate average commits per project
+  const avgCommitsPerProject = totalProjects > 0 ? Math.round(totalCommits / totalProjects) : 0;
+
+  const handleGoToConfiguration = () => {
+    setCurrentView('configuration');
   };
 
-  const handleDateRangeChange = (field) => (event) => {
-    updateFields({
-      dateRange: {
-        ...dateRange,
-        [field]: event.target.value
-      }
-    });
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
   };
 
-  const handleRepositorySelection = (repos) => {
-    updateField('selectedRepos', repos);
-  };
+  // Show configuration view if selected
+  if (currentView === 'configuration') {
+    return <ConfigurationView onBackToDashboard={handleBackToDashboard} />;
+  }
 
   return (
     <>
-      {/* App Bar with Theme Toggle */}
+      {/* Dashboard App Bar */}
       <AppBar position="static" elevation={0} sx={{ mb: 4 }}>
         <Toolbar>
           <GitHubIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            ChronoDev - Git Development Hours Tracker
+            ChronoDev Dashboard
           </Typography>
+          <Button 
+            color="inherit" 
+            onClick={handleGoToConfiguration}
+            startIcon={<SettingsIcon />}
+            sx={{ mr: 1 }}
+          >
+            Configuration
+          </Button>
           <ThemeToggle />
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Error Display */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Error Display */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* GitHub Configuration */}
-      <CollapsibleSection 
-        title="GitHub Repository Analysis" 
-        icon={<SettingsIcon />}
-        defaultExpanded={true}
-      >
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="GitHub Username"
-              value={githubUsername}
-              onChange={handleFieldChange('githubUsername')}
-              margin="normal"
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="GitHub Token (Optional)"
-              type="password"
-              value={githubToken}
-              onChange={handleFieldChange('githubToken')}
-              margin="normal"
-              helperText="For private repos and higher rate limits"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              onClick={loadGitHubRepositories}
-              disabled={loading || !githubUsername}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Load Repositories'}
-            </Button>
-          </Grid>
-        </Grid>
-      </CollapsibleSection>
-
-      {/* Repository Selector */}
-      {repositories.length > 0 && (
-        <CollapsibleSection 
-          title="Repository Selection" 
-          icon={<GitHubIcon />}
-          defaultExpanded={true}
-        >
-          <RepositorySelector
-            repositories={repositories}
-            selectedRepos={selectedRepos}
-            onSelectionChange={handleRepositorySelection}
-          />
-        </CollapsibleSection>
-      )}
-
-      {/* Analysis Settings */}
-      <CollapsibleSection 
-        title="Analysis Settings" 
-        icon={<AnalyticsIcon />}
-        defaultExpanded={selectedRepos.length > 0}
-      >
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Author Filter (Optional)"
-              value={author}
-              onChange={handleFieldChange('author')}
-              helperText="Filter commits by author name"
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Since Date"
-              type="date"
-              value={dateRange.since}
-              onChange={handleDateRangeChange('since')}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Until Date"
-              type="date"
-              value={dateRange.until}
-              onChange={handleDateRangeChange('until')}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={analyzeRepositories}
-              disabled={loading || selectedRepos.length === 0}
+        {/* Show message if no analysis results */}
+        {analysisResults.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <GitHubIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h5" gutterBottom color="text.secondary">
+              Welcome to ChronoDev Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Configure your GitHub repositories and analysis settings to get started.
+            </Typography>
+            <Button 
+              variant="contained" 
               size="large"
+              onClick={handleGoToConfiguration}
+              startIcon={<SettingsIcon />}
             >
-              {loading ? <CircularProgress size={24} /> : 'ANALYZE SELECTED REPOSITORIES'}
+              Go to Configuration
             </Button>
-          </Grid>
-        </Grid>
-      </CollapsibleSection>
+          </Box>
+        )}
 
-      {/* Advanced Metrics */}
-      {analysisResults.length > 0 && (
-        <CollapsibleSection 
-          title="Advanced Productivity Metrics" 
-          icon={<AssessmentIcon />}
-          defaultExpanded={false}
-        >
-          <AdvancedMetrics analysisResults={analysisResults} />
-        </CollapsibleSection>
-      )}
+        {/* Advanced Metrics */}
+        {analysisResults.length > 0 && (
+          <CollapsibleSection 
+            title="Advanced Productivity Metrics" 
+            icon={<AssessmentIcon />}
+            defaultExpanded={false}
+          >
+            <AdvancedMetrics analysisResults={analysisResults} />
+          </CollapsibleSection>
+        )}
 
       {/* Summary Statistics */}
       {analysisResults.length > 0 && (
@@ -277,13 +184,13 @@ const Dashboard = () => {
             <Card>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Warning color="warning" />
+                  <TrendingUp color="success" />
                   <Box>
                     <Typography variant="h4" component="div">
-                      {inactiveProjects.length}
+                      {avgCommitsPerProject}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Inactive Projects
+                      Avg Commits/Project
                     </Typography>
                   </Box>
                 </Stack>
