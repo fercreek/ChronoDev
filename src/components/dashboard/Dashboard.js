@@ -3,27 +3,37 @@ import {
   Container,
   Typography,
   Grid,
-  Paper,
+  Card,
+  CardContent,
   TextField,
   Button,
   Box,
   Alert,
   CircularProgress,
-  Card,
-  CardContent,
-  Chip,
-  Stack
+  Stack,
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import {
   TrendingUp,
   Code,
   Schedule,
-  Warning
+  Warning,
+  GitHub as GitHubIcon,
+  Analytics as AnalyticsIcon,
+  Commit as CommitIcon,
+  Settings as SettingsIcon,
+  Assessment as AssessmentIcon,
+  CalendarToday as CalendarIcon,
+  Timeline as TimelineIcon
 } from '@mui/icons-material';
 
 import { useDashboard } from '../../hooks/useDashboard';
 import { RepositorySelector, ProjectCard } from '../repository';
 import { WeeklyChart } from '../charts';
+import CollapsibleSection from '../common/CollapsibleSection';
+import ThemeToggle from '../common/ThemeToggle';
+import AdvancedMetrics from './AdvancedMetrics';
 
 const Dashboard = () => {
   const {
@@ -68,11 +78,19 @@ const Dashboard = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header */}
-      <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
-        ChronoDev - Git Development Hours Tracker
-      </Typography>
+    <>
+      {/* App Bar with Theme Toggle */}
+      <AppBar position="static" elevation={0} sx={{ mb: 4 }}>
+        <Toolbar>
+          <GitHubIcon sx={{ mr: 2 }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            ChronoDev - Git Development Hours Tracker
+          </Typography>
+          <ThemeToggle />
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="xl" sx={{ py: 4 }}>
 
       {/* Error Display */}
       {error && (
@@ -82,10 +100,11 @@ const Dashboard = () => {
       )}
 
       {/* GitHub Configuration */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          GitHub Repository Analysis
-        </Typography>
+      <CollapsibleSection 
+        title="GitHub Repository Analysis" 
+        icon={<SettingsIcon />}
+        defaultExpanded={true}
+      >
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <TextField
@@ -117,22 +136,29 @@ const Dashboard = () => {
             </Button>
           </Grid>
         </Grid>
-      </Paper>
+      </CollapsibleSection>
 
       {/* Repository Selector */}
       {repositories.length > 0 && (
-        <RepositorySelector
-          repositories={repositories}
-          selectedRepos={selectedRepos}
-          onSelectionChange={handleRepositorySelection}
-        />
+        <CollapsibleSection 
+          title="Repository Selection" 
+          icon={<GitHubIcon />}
+          defaultExpanded={true}
+        >
+          <RepositorySelector
+            repositories={repositories}
+            selectedRepos={selectedRepos}
+            onSelectionChange={handleRepositorySelection}
+          />
+        </CollapsibleSection>
       )}
 
       {/* Analysis Settings */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Analysis Settings
-        </Typography>
+      <CollapsibleSection 
+        title="Analysis Settings" 
+        icon={<AnalyticsIcon />}
+        defaultExpanded={selectedRepos.length > 0}
+      >
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <TextField
@@ -175,11 +201,27 @@ const Dashboard = () => {
             </Button>
           </Grid>
         </Grid>
-      </Paper>
+      </CollapsibleSection>
+
+      {/* Advanced Metrics */}
+      {analysisResults.length > 0 && (
+        <CollapsibleSection 
+          title="Advanced Productivity Metrics" 
+          icon={<AssessmentIcon />}
+          defaultExpanded={false}
+        >
+          <AdvancedMetrics analysisResults={analysisResults} />
+        </CollapsibleSection>
+      )}
 
       {/* Summary Statistics */}
       {analysisResults.length > 0 && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <CollapsibleSection 
+          title="Summary Statistics" 
+          icon={<CommitIcon />}
+          defaultExpanded={true}
+        >
+          <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
@@ -249,21 +291,27 @@ const Dashboard = () => {
             </Card>
           </Grid>
         </Grid>
+        </CollapsibleSection>
       )}
 
       {/* Charts Section */}
       {analysisResults.length > 0 && (
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Weekly Activity
-          </Typography>
+        <CollapsibleSection 
+          title="Weekly Activity Charts" 
+          icon={<TimelineIcon />}
+          defaultExpanded={true}
+        >
           <WeeklyChart data={analysisResults} projects={analysisResults} />
-        </Paper>
+        </CollapsibleSection>
       )}
 
       {/* Project Details */}
       {analysisResults.length > 0 && (
-        <Box>
+        <CollapsibleSection 
+          title="Project Details" 
+          icon={<CalendarIcon />}
+          defaultExpanded={true}
+        >
           <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
             Project Details
           </Typography>
@@ -274,9 +322,10 @@ const Dashboard = () => {
               </Grid>
             ))}
           </Grid>
-        </Box>
+        </CollapsibleSection>
       )}
     </Container>
+    </>
   );
 };
 

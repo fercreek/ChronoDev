@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,7 +7,8 @@ import {
   Chip,
   LinearProgress,
   Avatar,
-  Stack
+  Stack,
+  useTheme,
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -19,8 +20,20 @@ import {
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
 import moment from 'moment';
+import ProjectDetailsModal from './ProjectDetailsModal';
 
 function ProjectCard({ project }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const theme = useTheme();
+
+  const handleCardClick = () => {
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
+
   const getLastCommitStatus = () => {
     if (!project.lastCommit) return { color: 'error', text: 'No commits', icon: <WarningIcon /> };
     
@@ -58,20 +71,23 @@ function ProjectCard({ project }) {
   const projectColor = getProjectColor();
 
   return (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 6
-        }
-      }}
-    >
+    <>
+      <Card 
+        onClick={handleCardClick}
+        sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: 6
+          }
+        }}
+      >
       {/* Header with gradient */}
       <Box
         sx={{
@@ -206,6 +222,14 @@ function ProjectCard({ project }) {
         </Stack>
       </CardContent>
     </Card>
+    
+    <ProjectDetailsModal
+      open={modalOpen}
+      onClose={handleModalClose}
+      project={project}
+      analysis={project}
+    />
+  </>
   );
 }
 
