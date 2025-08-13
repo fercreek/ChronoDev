@@ -137,6 +137,30 @@ class GitHubService {
     }
   }
 
+  async getRepositoryDetails(owner, repo) {
+    try {
+      const response = await this.api.get(`/repos/${owner}/${repo}`);
+      const repoData = response.data;
+      return {
+        name: repoData.name,
+        fullName: repoData.full_name,
+        description: repoData.description,
+        language: repoData.language,
+        stargazersCount: repoData.stargazers_count,
+        forksCount: repoData.forks_count,
+        openIssuesCount: repoData.open_issues_count,
+        defaultBranch: repoData.default_branch,
+        createdAt: repoData.created_at,
+        updatedAt: repoData.updated_at,
+        pushedAt: repoData.pushed_at,
+        url: repoData.html_url
+      };
+    } catch (error) {
+      // Non-fatal: analysis can proceed without repo details
+      return null;
+    }
+  }
+
   async getRepositoryCommits(owner, repo, author = null, since = null, until = null) {
     try {
       const params = {
@@ -177,7 +201,10 @@ class GitHubService {
 
   async analyzeRepository(owner, repo, author = null, since = null, until = null) {
     try {
-      const commits = await this.getRepositoryCommits(owner, repo, author, since, until);
+      const [commits, repoDetails] = await Promise.all([
+        this.getRepositoryCommits(owner, repo, author, since, until),
+        this.getRepositoryDetails(owner, repo)
+      ]);
       const estimation = this.estimator.estimateHours(commits);
       const weeklyStats = this.estimator.getWeeklyStats(commits);
       
@@ -186,9 +213,16 @@ class GitHubService {
 
       return {
         repository: `${owner}/${repo}`,
+        repositoryDetails: repoDetails,
+        language: repoDetails?.language || null,
+        stargazersCount: repoDetails?.stargazersCount || 0,
+        forksCount: repoDetails?.forksCount || 0,
+        description: repoDetails?.description || null,
+        pushedAt: repoDetails?.pushedAt || null,
         totalCommits: commits.length,
         estimatedHours: estimation.hours,
         sessions: estimation.sessions,
+        lastCommitDate: lastCommit ? lastCommit.date : null,
         lastCommit: lastCommit ? {
           date: lastCommit.date,
           message: lastCommit.message,

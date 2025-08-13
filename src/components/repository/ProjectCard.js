@@ -17,7 +17,10 @@ import {
   Warning as WarningIcon,
   TrendingUp as TrendingUpIcon,
   Code as CodeIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  Star as StarIcon,
+  CallSplit as CallSplitIcon,
+  Language as LanguageIcon
 } from '@mui/icons-material';
 import moment from 'moment';
 import ProjectDetailsModal from './ProjectDetailsModal';
@@ -128,6 +131,30 @@ function ProjectCard({ project }) {
       </Box>
 
       <CardContent sx={{ flexGrow: 1, p: 2 }}>
+        {/* Meta Badges */}
+        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+          {project.language && (
+            <Chip
+              size="small"
+              icon={<LanguageIcon fontSize="small" />}
+              label={project.language}
+              variant="outlined"
+            />
+          )}
+          <Chip
+            size="small"
+            icon={<StarIcon fontSize="small" />}
+            label={`${project.stargazersCount || 0}`}
+            variant="outlined"
+          />
+          <Chip
+            size="small"
+            icon={<CallSplitIcon fontSize="small" />}
+            label={`${project.forksCount || 0}`}
+            variant="outlined"
+          />
+        </Stack>
+
         {/* Activity Level */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

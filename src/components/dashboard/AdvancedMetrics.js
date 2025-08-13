@@ -44,34 +44,45 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
     const mostActiveProject = analysisResults.reduce((max, repo) => 
       (repo.totalCommits || 0) > (max?.totalCommits || 0) ? repo : max, null);
     
+    // Least active project (by commits)
+    const leastActiveProject = analysisResults.reduce((min, repo) => {
+      const commits = repo.totalCommits || 0;
+      if (!min) return repo;
+      return commits < (min.totalCommits || 0) ? repo : min;
+    }, null);
+    
     // Calculate averages
     const avgHoursPerProject = totalHours / analysisResults.length;
     const avgCommitsPerProject = totalCommits / analysisResults.length;
     const avgCommitsPerHour = totalHours > 0 ? totalCommits / totalHours : 0;
+    const avgSessionsPerProject = (analysisResults.reduce((s, r) => s + (r.sessions || 0), 0)) / analysisResults.length;
+    const avgHoursPerCommit = totalCommits > 0 ? totalHours / totalCommits : 0;
     
     // Calculate productivity trends
     const activeProjects = analysisResults.filter(repo => (repo.totalCommits || 0) > 0);
     
-    // Calculate most productive day of week
-    const dayCommits = {};
+    // Calculate most productive week (based on weeklyStats)
+    let mostProductiveWeek = 'N/A';
+    let mostProductiveWeekCommits = -1;
     analysisResults.forEach(repo => {
-      if (repo.weeklyData) {
-        repo.weeklyData.forEach(week => {
-          const day = moment(week.week).format('dddd');
-          dayCommits[day] = (dayCommits[day] || 0) + (week.commits || 0);
+      if (repo.weeklyStats) {
+        Object.entries(repo.weeklyStats).forEach(([weekStart, stats]) => {
+          const commitsInWeek = stats?.commits || 0;
+          if (commitsInWeek > mostProductiveWeekCommits) {
+            mostProductiveWeekCommits = commitsInWeek;
+            mostProductiveWeek = moment(weekStart).format('MMM D, YYYY');
+          }
         });
       }
     });
-    const mostProductiveDay = Object.keys(dayCommits).reduce((a, b) => 
-      dayCommits[a] > dayCommits[b] ? a : b, 'N/A');
     
     // Calculate productivity score (commits per hour ratio)
     const productivityScore = avgCommitsPerHour > 0 ? Math.min(100, Math.round(avgCommitsPerHour * 10)) : 0;
     
     // Find most recent activity
     const mostRecentActivity = analysisResults.reduce((latest, repo) => {
-      const repoDate = repo.lastCommitDate || repo.repository?.pushedAt;
-      const latestDate = latest?.lastCommitDate || latest?.repository?.pushedAt;
+      const repoDate = repo.lastCommitDate || repo.pushedAt;
+      const latestDate = latest?.lastCommitDate || latest?.pushedAt;
       return moment(repoDate).isAfter(moment(latestDate)) ? repo : latest;
     }, null);
 
@@ -80,11 +91,14 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
       totalHours,
       mostProductiveProject,
       mostActiveProject,
+      leastActiveProject,
       avgHoursPerProject,
       avgCommitsPerProject,
       avgCommitsPerHour,
+      avgSessionsPerProject,
+      avgHoursPerCommit,
       activeProjects: activeProjects.length,
-      mostProductiveDay,
+      mostProductiveWeek,
       productivityScore,
       mostRecentActivity,
       projectCount: analysisResults.length,
@@ -180,6 +194,26 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
                   </Typography>
                 </Box>
               </Grid>
+              <Grid item xs={6}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
+                    {Math.round(metrics.avgSessionsPerProject * 10) / 10}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Avg Sessions/Project
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
+                    {Math.round(metrics.avgHoursPerCommit * 100) / 100}h
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Avg Hours/Commit
+                  </Typography>
+                </Box>
+              </Grid>
             </Grid>
           </CardContent>
         </Card>
@@ -208,6 +242,23 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatDuration(metrics.mostProductiveProject?.estimatedHours || 0)} estimated
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItem>
+
+              <ListItem>
+                <ListItemIcon><Commit color="error" /></ListItemIcon>
+                <ListItemText 
+                  primary="Least Active Project" 
+                  secondary={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {metrics.leastActiveProject?.repository || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {metrics.leastActiveProject?.totalCommits || 0} commits
                       </Typography>
                     </Box>
                   }
@@ -280,10 +331,10 @@ const AdvancedMetrics = ({ analysisResults = [] }) => {
               <Grid item xs={4}>
                 <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'secondary.light', borderRadius: 2, color: 'secondary.contrastText' }}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {metrics.mostProductiveDay}
+                    {metrics.mostProductiveWeek}
                   </Typography>
                   <Typography variant="body2">
-                    Best Day
+                    Most Productive Week
                   </Typography>
                 </Box>
               </Grid>

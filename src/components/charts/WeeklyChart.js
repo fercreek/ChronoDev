@@ -271,12 +271,15 @@ function WeeklyChart({ data = [], projects = [] }) {
 
       <Box sx={{ mt: 2 }}>
         <Typography variant="body2" color="textSecondary">
-          {data.length > 0 && (
-            <>
-              Showing data from {data[0]?.date} to {data[data.length - 1]?.date} 
-              ({data.length} weeks)
-            </>
-          )}
+          {(() => {
+            const chartData = getChartData();
+            if (chartData.length === 0) return null;
+            return (
+              <>
+                Showing data from {chartData[0]?.date} to {chartData[chartData.length - 1]?.date} ({chartData.length} weeks)
+              </>
+            );
+          })()}
         </Typography>
       </Box>
     </Paper>
