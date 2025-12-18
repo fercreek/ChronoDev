@@ -1,0 +1,427 @@
+---
+description: ChronoDev project rules and best practices for React, Material-UI, and GitHub API integration
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: true
+---
+
+# ChronoDev - Cursor Rules
+
+## Project Overview
+ChronoDev is a React-based dashboard for tracking Git development hours and visualizing commit activity across GitHub repositories. Built with Create React App, Material-UI, and modern React patterns.
+
+## Architecture & Structure
+
+### Directory Structure
+```
+src/
+├── components/          # React components organized by feature
+│   ├── dashboard/       # Dashboard-specific components
+│   ├── repository/      # Repository-related components
+│   ├── charts/          # Chart and visualization components
+│   ├── common/          # Reusable UI components
+│   └── configuration/  # Configuration views
+├── contexts/            # React Context providers (Theme, Language)
+├── hooks/               # Custom React hooks
+├── services/            # API services and business logic
+├── utils/               # Utility functions and helpers
+├── constants/           # Application constants and config
+└── locales/             # i18n translation files (en.js, es.js)
+```
+
+### Component Organization
+- **Feature-based**: Group components by feature/domain (dashboard, repository, etc.)
+- **Common components**: Reusable UI components in `common/`
+- **One component per file**: Each component in its own file
+- **Index files**: Use `index.js` for clean imports when needed
+
+## Code Style & Conventions
+
+### React Patterns
+- Use **functional components** with hooks (no class components)
+- Prefer **named exports** for components: `export default ComponentName`
+- Use **React.memo** sparingly, only when performance is critical
+- Keep components **small and focused** (single responsibility)
+- Extract complex logic into **custom hooks**
+
+### Naming Conventions
+- **Components**: PascalCase (`ProjectCard`, `SummaryStatistics`)
+- **Files**: Match component name (`ProjectCard.js`)
+- **Hooks**: camelCase starting with `use` (`useDashboard`, `useLanguage`)
+- **Functions**: camelCase (`loadGitHubRepositories`, `calculateConsistency`)
+- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_CONFIG`, `ENV`)
+- **CSS classes**: kebab-case (`.app-container`)
+
+### Import Order
+1. React and React-related imports
+2. Third-party libraries (Material-UI, moment, etc.)
+3. Internal components
+4. Hooks and utilities
+5. Contexts and services
+6. Constants
+7. Styles (CSS imports last)
+
+Example:
+```javascript
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { t } from '../../utils/i18n';
+import './Component.css';
+```
+
+## Internationalization (i18n)
+
+### Translation System
+- **Always use translations**: Never hardcode user-facing strings
+- **Translation function**: Use `t(key, language, params)` from `utils/i18n.js`
+- **Language context**: Access via `useLanguage()` hook
+- **Translation keys**: Use dot notation (`dashboard.totalProjects`)
+
+### Translation File Structure
+```javascript
+// locales/en.js or es.js
+export const en = {
+  dashboard: {
+    totalProjects: 'Total Projects',
+    // Use {param} for dynamic values
+    projectsCount: '{filtered} of {total} projects',
+  },
+};
+```
+
+### Usage Pattern
+```javascript
+const { language } = useLanguage();
+<Typography>{t('dashboard.totalProjects', language)}</Typography>
+<Typography>{t('dashboard.projectsCount', language, { filtered: 5, total: 10 })}</Typography>
+```
+
+## Material-UI Patterns
+
+### Theme Usage
+- **Access theme**: Use `useTheme()` hook from `@mui/material`
+- **Theme-aware colors**: Use `theme.palette.mode` for dark/light mode
+- **Responsive breakpoints**: Use `sx` prop with breakpoint objects
+- **Consistent spacing**: Use theme spacing units (1 = 8px)
+
+### Component Patterns
+- **Use `sx` prop** for styling (preferred over `styled` components)
+- **Responsive design**: Always make components responsive
+  ```javascript
+  sx={{
+    width: { xs: '100%', md: '50%' },
+    fontSize: { xs: '0.875rem', md: '1rem' }
+  }}
+  ```
+- **Dark mode support**: Always check `theme.palette.mode`
+  ```javascript
+  bgcolor: theme.palette.mode === 'dark' 
+    ? 'rgba(255,255,255,0.05)' 
+    : 'rgba(0,0,0,0.02)'
+  ```
+
+### Common MUI Components
+- **Cards**: Use for content containers
+- **Grid**: Use for layouts (responsive by default)
+- **Stack**: Use for flex layouts
+- **Typography**: Use semantic variants (h1-h6, body1, body2, caption)
+- **Chip**: Use for badges and tags
+- **CollapsibleSection**: Custom component for collapsible content
+
+## State Management
+
+### Custom Hooks Pattern
+- **Centralize state**: Use custom hooks for complex state logic
+- **Hook naming**: `useFeatureName` (e.g., `useDashboard`)
+- **Return pattern**: Return object with state and actions
+  ```javascript
+  return {
+    // State
+    ...state,
+    // Actions
+    loadData,
+    updateField,
+    // Computed
+    totalProjects: state.results.length,
+  };
+  ```
+
+### State Structure
+- **Group related state**: Use single state object for related data
+- **Derived state**: Calculate in `useMemo` when expensive
+- **Local state**: Use `useState` for component-specific state
+- **Persistent state**: Use `localStorage` via `useEffect`
+
+## API & Services
+
+### Service Pattern
+- **Class-based services**: Use classes for API services
+- **Singleton pattern**: Create service instance once, reuse
+- **Error handling**: Always handle errors gracefully
+- **Token management**: Update tokens via `updateToken()` method
+
+### GitHub API
+- **Authentication**: Use `Bearer ${token}` format (not `token ${token}`)
+- **Rate limits**: Handle rate limit errors gracefully
+- **Pagination**: Implement pagination for large datasets
+- **Error messages**: Provide user-friendly error messages
+
+## Styling Guidelines
+
+### CSS Organization
+- **Global styles**: `index.css` for base styles and resets
+- **Component styles**: `App.css` for app-level styles
+- **Inline styles**: Use `sx` prop for component-specific styles
+- **Theme variables**: Use theme colors, spacing, typography
+
+### Responsive Design
+- **Mobile-first**: Design for mobile, enhance for desktop
+- **Breakpoints**: xs (0px), sm (600px), md (900px), lg (1200px), xl (1536px)
+- **Grid system**: Use Material-UI Grid with responsive props
+- **Typography**: Scale font sizes responsively
+
+### Color System
+- **Theme colors**: Use `theme.palette.primary`, `theme.palette.success`, etc.
+- **Custom colors**: Define in theme, not hardcoded
+- **Dark mode**: Always provide dark mode variants
+- **Contrast**: Ensure sufficient contrast for accessibility
+
+## Component Patterns
+
+### Card Components
+- **Consistent structure**: Header, Content, Actions
+- **Hover effects**: Add subtle hover animations
+- **Elevation**: Use appropriate elevation (0-24)
+- **Padding**: Consistent padding (p: 2 or p: 3)
+
+### Form Components
+- **Controlled inputs**: Always use controlled components
+- **Validation**: Show validation errors clearly
+- **Loading states**: Show loading indicators during async operations
+- **Error handling**: Display errors in Alert components
+
+### List Components
+- **Virtualization**: Consider for long lists
+- **Empty states**: Show helpful messages when empty
+- **Loading states**: Show skeletons or spinners
+- **Pagination**: Implement for large datasets
+
+## Performance Optimization
+
+### React Optimization
+- **useMemo**: For expensive calculations
+- **useCallback**: For functions passed as props
+- **React.memo**: For components that re-render frequently
+- **Code splitting**: Use React.lazy for route-based splitting
+
+### Data Optimization
+- **Pagination**: Limit data fetched at once
+- **Debouncing**: For search inputs
+- **Caching**: Cache API responses when appropriate
+- **Memoization**: Cache computed values
+
+## Error Handling
+
+### Error Patterns
+- **Try-catch**: Always wrap async operations
+- **User-friendly messages**: Translate error messages
+- **Error boundaries**: Use for component-level errors
+- **Fallback UI**: Show fallback when errors occur
+
+### Error Display
+- **Alert component**: Use Material-UI Alert for errors
+- **Error state**: Set error in state, display in UI
+- **Clear errors**: Clear errors when user action succeeds
+
+## Environment Variables
+
+### Variable Naming
+- **Prefix**: All variables must start with `REACT_APP_`
+- **Naming**: UPPER_SNAKE_CASE
+- **Access**: Via `process.env.REACT_APP_VARIABLE_NAME`
+- **Constants**: Centralize in `constants/index.js`
+
+### Required Variables
+- `REACT_APP_GITHUB_USERNAME`: GitHub username
+- `REACT_APP_GITHUB_TOKEN`: GitHub personal access token (optional)
+- `REACT_APP_DEFAULT_REPOS`: Comma-separated list of default repos
+
+## Testing Guidelines
+
+### Test Structure
+- **Test files**: Co-locate with components (`Component.test.js`)
+- **Test naming**: `describe('ComponentName', () => { ... })`
+- **Test cases**: Use descriptive test names
+- **Coverage**: Aim for meaningful coverage, not 100%
+
+## Git & Version Control
+
+### Commit Messages
+- **Format**: Use conventional commits when possible
+- **Language**: English for commit messages
+- **Descriptive**: Clearly describe what and why
+
+### Branch Strategy
+- **Main branch**: `main` or `master`
+- **Feature branches**: `feature/feature-name`
+- **Bug fixes**: `fix/bug-description`
+
+## Code Quality
+
+### Linting
+- **ESLint**: Follow React app ESLint rules
+- **Fix warnings**: Address all linting warnings
+- **Unused imports**: Remove unused imports
+- **Unused variables**: Remove or use all declared variables
+
+### Code Review Checklist
+- [ ] Components are properly typed (if using TypeScript)
+- [ ] All user-facing strings are translated
+- [ ] Components are responsive
+- [ ] Dark mode is supported
+- [ ] Error handling is implemented
+- [ ] Loading states are shown
+- [ ] No console.logs in production code
+- [ ] No hardcoded values (use constants)
+
+## Best Practices
+
+### DO
+- ✅ Use functional components and hooks
+- ✅ Extract reusable logic into custom hooks
+- ✅ Use translations for all user-facing text
+- ✅ Make components responsive
+- ✅ Support dark mode
+- ✅ Handle errors gracefully
+- ✅ Show loading states
+- ✅ Use semantic HTML
+- ✅ Optimize with useMemo/useCallback when needed
+- ✅ Keep components small and focused
+
+### DON'T
+- ❌ Don't use class components
+- ❌ Don't hardcode strings (use translations)
+- ❌ Don't ignore responsive design
+- ❌ Don't forget dark mode support
+- ❌ Don't leave console.logs in code
+- ❌ Don't use inline styles (use sx prop)
+- ❌ Don't create deeply nested components
+- ❌ Don't ignore linting warnings
+- ❌ Don't commit sensitive data
+- ❌ Don't use `token` prefix for GitHub auth (use `Bearer`)
+
+## Common Patterns
+
+### Loading State Pattern
+```javascript
+{loading ? (
+  <CircularProgress />
+) : (
+  <Content />
+)}
+```
+
+### Error State Pattern
+```javascript
+{error && (
+  <Alert severity="error">{error}</Alert>
+)}
+```
+
+### Empty State Pattern
+```javascript
+{items.length === 0 ? (
+  <EmptyState message={t('noItems', language)} />
+) : (
+  <ItemList items={items} />
+)}
+```
+
+### Responsive Grid Pattern
+```javascript
+<Grid container spacing={3}>
+  <Grid item xs={12} sm={6} md={4}>
+    <Component />
+  </Grid>
+</Grid>
+```
+
+## File Naming
+
+### Components
+- **PascalCase**: `ProjectCard.js`, `SummaryStatistics.js`
+- **Match export**: File name matches default export
+
+### Utilities
+- **camelCase**: `i18n.js`, `index.js`
+- **Descriptive**: Clear purpose from name
+
+### Constants
+- **UPPER_SNAKE_CASE**: `DEFAULT_CONFIG`, `ENV`
+
+## Documentation
+
+### Component Documentation
+- **JSDoc comments**: For complex functions
+- **PropTypes**: Consider adding (or use TypeScript)
+- **README**: Update when adding major features
+
+### Code Comments
+- **Why, not what**: Explain reasoning, not obvious code
+- **Complex logic**: Comment complex algorithms
+- **TODOs**: Use TODO comments for future improvements
+
+## Security
+
+### Best Practices
+- **No secrets in code**: Use environment variables
+- **Token handling**: Never log or expose tokens
+- **Input validation**: Validate all user inputs
+- **XSS prevention**: Use React's built-in XSS protection
+
+## Accessibility
+
+### Guidelines
+- **Semantic HTML**: Use proper HTML elements
+- **ARIA labels**: Add when needed
+- **Keyboard navigation**: Ensure keyboard accessibility
+- **Focus management**: Manage focus appropriately
+- **Color contrast**: Ensure sufficient contrast
+- **Alt text**: Add alt text to images
+
+## Performance Targets
+
+### Metrics
+- **Initial load**: < 3 seconds
+- **Time to interactive**: < 5 seconds
+- **Bundle size**: Keep under 500KB (gzipped)
+- **Re-renders**: Minimize unnecessary re-renders
+
+## Dependencies
+
+### Core Dependencies
+- **React**: ^19.1.0
+- **Material-UI**: ^7.2.0
+- **Axios**: ^1.11.0
+- **Moment.js**: ^2.30.1
+- **Recharts**: ^3.1.0
+
+### When Adding Dependencies
+- **Check bundle size**: Consider impact on bundle
+- **Check maintenance**: Ensure package is maintained
+- **Check compatibility**: Verify React 19 compatibility
+- **Document reason**: Add comment explaining why
+
+## Future Considerations
+
+### Potential Improvements
+- Consider migrating to TypeScript for type safety
+- Consider adding unit tests for critical paths
+- Consider adding E2E tests for user flows
+- Consider implementing service workers for offline support
+- Consider adding analytics tracking
+- Consider implementing error tracking (Sentry, etc.)
