@@ -24,10 +24,13 @@ import {
 } from '@mui/icons-material';
 import moment from 'moment';
 import ProjectDetailsModal from './ProjectDetailsModal';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { t } from '../../utils/i18n';
 
 function ProjectCard({ project }) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const { language } = useLanguage();
   const theme = useTheme();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleCardClick = () => {
     setModalOpen(true);
@@ -38,26 +41,26 @@ function ProjectCard({ project }) {
   };
 
   const getLastCommitStatus = () => {
-    if (!project.lastCommit) return { color: 'error', text: 'No commits', icon: <WarningIcon /> };
+    if (!project.lastCommit) return { color: 'error', text: t('projectCard.noCommits', language), icon: <WarningIcon /> };
     
     const lastCommitDate = moment(project.lastCommit.date);
     const daysSince = moment().diff(lastCommitDate, 'days');
     
     if (daysSince <= 7) {
-      return { color: 'success', text: `${daysSince} days ago`, icon: <AccessTimeIcon /> };
+      return { color: 'success', text: t('projectCard.daysAgo', language, { days: daysSince }), icon: <AccessTimeIcon /> };
     } else if (daysSince <= 30) {
-      return { color: 'warning', text: `${daysSince} days ago`, icon: <AccessTimeIcon /> };
+      return { color: 'warning', text: t('projectCard.daysAgo', language, { days: daysSince }), icon: <AccessTimeIcon /> };
     } else {
-      return { color: 'error', text: `${daysSince} days ago`, icon: <WarningIcon /> };
+      return { color: 'error', text: t('projectCard.daysAgo', language, { days: daysSince }), icon: <WarningIcon /> };
     }
   };
 
   const getActivityLevel = () => {
     const hours = project.estimatedHours || 0;
-    if (hours >= 50) return { level: 'High', color: 'success', progress: 100 };
-    if (hours >= 20) return { level: 'Medium', color: 'warning', progress: 70 };
-    if (hours >= 5) return { level: 'Low', color: 'info', progress: 40 };
-    return { level: 'Very Low', color: 'error', progress: 20 };
+    if (hours >= 50) return { level: t('projectCard.high', language), color: 'success', progress: 100 };
+    if (hours >= 20) return { level: t('projectCard.medium', language), color: 'warning', progress: 70 };
+    if (hours >= 5) return { level: t('projectCard.low', language), color: 'info', progress: 40 };
+    return { level: t('projectCard.veryLow', language), color: 'error', progress: 20 };
   };
 
   const getProjectColor = () => {
@@ -158,95 +161,112 @@ function ProjectCard({ project }) {
         {/* Activity Level */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 500 }}>
               <TrendingUpIcon fontSize="small" />
-              Activity Level
+              {t('projectCard.activityLevel', language)}
             </Typography>
-            <Typography variant="body2" fontWeight={600} color={activityLevel.color + '.main'}>
-              {activityLevel.level}
-            </Typography>
+            <Chip 
+              label={activityLevel.level} 
+              size="small" 
+              color={activityLevel.color}
+              sx={{ fontWeight: 600 }}
+            />
           </Box>
           <LinearProgress
             variant="determinate"
             value={activityLevel.progress}
             color={activityLevel.color}
             sx={{ 
-              height: 8, 
-              borderRadius: 4,
-              backgroundColor: 'grey.200',
+              height: 10, 
+              borderRadius: 5,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
               '& .MuiLinearProgress-bar': {
-                borderRadius: 4
+                borderRadius: 5
               }
             }}
           />
         </Box>
 
-        {/* Stats Grid */}
-        <Stack spacing={2}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+        {/* Stats Grid - Compacto */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {/* Commits, Estimated y Last Commit en una sola fila */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Commits */}
             <Box 
               sx={{ 
-                p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: 'primary.50',
+                flex: 1,
+                p: 1, 
+                borderRadius: 1.5, 
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.15)' : 'primary.50',
                 border: '1px solid',
-                borderColor: 'primary.100',
-                textAlign: 'center'
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.3)' : 'primary.100',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
               }}
             >
-              <CommitIcon sx={{ color: 'primary.main', mb: 0.5 }} />
-              <Typography variant="h6" fontWeight={700} color="primary.main">
-                {project.totalCommits || 0}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Commits
-              </Typography>
+              <CommitIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ lineHeight: 1.2 }}>
+                  {project.totalCommits || 0}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', lineHeight: 1 }}>
+                  {t('projectCard.commits', language)}
+                </Typography>
+              </Box>
             </Box>
             
+            {/* Estimated */}
             <Box 
               sx={{ 
-                p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: 'success.50',
+                flex: 1,
+                p: 1, 
+                borderRadius: 1.5, 
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'success.50',
                 border: '1px solid',
-                borderColor: 'success.100',
-                textAlign: 'center'
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'success.100',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
               }}
             >
-              <ScheduleIcon sx={{ color: 'success.main', mb: 0.5 }} />
-              <Typography variant="h6" fontWeight={700} color="success.main">
-                {Math.round(project.estimatedHours || 0)}h
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Estimated
-              </Typography>
+              <ScheduleIcon sx={{ color: 'success.main', fontSize: 18 }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={700} color="success.main" sx={{ lineHeight: 1.2 }}>
+                  {Math.round(project.estimatedHours || 0)}h
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', lineHeight: 1 }}>
+                  {t('projectCard.estimated', language)}
+                </Typography>
+              </Box>
+            </Box>
+            
+            {/* Last Commit */}
+            <Box 
+              sx={{ 
+                flex: 1,
+                p: 1, 
+                borderRadius: 1.5, 
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'grey.50',
+                border: '1px solid',
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'grey.200',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <CalendarIcon sx={{ fontSize: 18 }} color="action" />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', lineHeight: 1, display: 'block' }}>
+                  {t('projectCard.lastCommit', language)}
+                </Typography>
+                <Typography variant="body2" fontWeight={500} sx={{ lineHeight: 1.2, fontSize: '0.75rem' }}>
+                  {project.lastCommit ? moment(project.lastCommit.date).format('MMM D, YYYY') : t('projectCard.noCommits', language)}
+                </Typography>
+              </Box>
             </Box>
           </Box>
-          
-          {/* Last Commit Info */}
-          <Box 
-            sx={{ 
-              p: 1.5, 
-              borderRadius: 2, 
-              bgcolor: 'grey.50',
-              border: '1px solid',
-              borderColor: 'grey.200',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            <CalendarIcon fontSize="small" color="action" />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="body2" fontWeight={500}>
-                Last Commit
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {project.lastCommit ? moment(project.lastCommit.date).format('MMM D, YYYY') : 'No commits'}
-              </Typography>
-            </Box>
-          </Box>
-        </Stack>
+        </Box>
       </CardContent>
     </Card>
     

@@ -86,14 +86,14 @@ class GitHubService {
     this.token = token;
     this.api = axios.create({
       baseURL: 'https://api.github.com',
-      headers: token ? { 'Authorization': `token ${token}` } : {}
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
     this.estimator = new GitHoursEstimator();
   }
 
   updateToken(token) {
     this.token = token;
-    this.api.defaults.headers['Authorization'] = token ? `token ${token}` : '';
+    this.api.defaults.headers['Authorization'] = token ? `Bearer ${token}` : '';
     if (!token) {
       delete this.api.defaults.headers['Authorization'];
     }

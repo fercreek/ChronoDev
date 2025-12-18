@@ -8,9 +8,9 @@ import {
   Button,
   Box,
   Alert,
-  Stack,
   AppBar,
-  Toolbar
+  Toolbar,
+  CircularProgress,
 } from '@mui/material';
 import {
   TextField,
@@ -22,19 +22,16 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   FormControlLabel,
-  Switch,
-  Divider
+  Switch
 } from '@mui/material';
 import {
-  TrendingUp,
-  Code,
-  Schedule,
   GitHub as GitHubIcon,
   Commit as CommitIcon,
   Settings as SettingsIcon,
   Assessment as AssessmentIcon,
   CalendarToday as CalendarIcon,
-  Timeline as TimelineIcon
+  Timeline as TimelineIcon,
+  EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
 import { Star as StarIcon, CallSplit as ForkIcon, Sort as SortIcon, Search as SearchIcon } from '@mui/icons-material';
 
@@ -43,10 +40,18 @@ import { ProjectCard } from '../repository';
 import { WeeklyChart } from '../charts';
 import CollapsibleSection from '../common/CollapsibleSection';
 import ThemeToggle from '../common/ThemeToggle';
+import LanguageToggle from '../common/LanguageToggle';
 import AdvancedMetrics from './AdvancedMetrics';
+import SummaryStatistics from './SummaryStatistics';
+import TopProjectsRanking from './TopProjectsRanking';
 import { ConfigurationView } from '../configuration';
+import Footer from '../common/Footer';
+import { ENV } from '../../constants';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { t } from '../../utils/i18n';
 
 const Dashboard = () => {
+  const { language } = useLanguage();
   const [currentView, setCurrentView] = React.useState('dashboard');
   const [filters, setFilters] = React.useState({
     search: '',
@@ -63,6 +68,8 @@ const Dashboard = () => {
     totalProjects,
     totalCommits,
     totalHours,
+    repositories,
+    loading,
   } = useDashboard();
 
   // Calculate average commits per project
@@ -157,8 +164,9 @@ const Dashboard = () => {
             startIcon={<SettingsIcon />}
             sx={{ mr: 1 }}
           >
-            Configuration
+            {t('dashboard.goToConfiguration', language)}
           </Button>
+          <LanguageToggle />
           <ThemeToggle />
         </Toolbar>
       </AppBar>
@@ -167,7 +175,7 @@ const Dashboard = () => {
         {/* Filters Bar */}
         {analysisResults.length > 0 && (
           <CollapsibleSection 
-            title="Search & Filters" 
+            title={t('dashboard.searchAndFilters', language)} 
             icon={<SearchIcon />} 
             defaultExpanded={false}
           >
@@ -178,7 +186,7 @@ const Dashboard = () => {
                   <TextField
                     size="small"
                     fullWidth
-                    label="Search projects"
+                    label={t('dashboard.searchProjects', language)}
                     value={filters.search}
                     onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                     InputProps={{
@@ -188,13 +196,13 @@ const Dashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
-                    <InputLabel>Language</InputLabel>
+                    <InputLabel>{t('dashboard.language', language)}</InputLabel>
                     <Select
-                      label="Language"
+                      label={t('dashboard.language', language)}
                       value={filters.language}
                       onChange={(e) => setFilters(prev => ({ ...prev, language: e.target.value }))}
                     >
-                      <MenuItem value="all">All</MenuItem>
+                      <MenuItem value="all">{t('dashboard.all', language)}</MenuItem>
                       {languages.map(lang => (
                         <MenuItem key={lang} value={lang}>{lang}</MenuItem>
                       ))}
@@ -203,18 +211,18 @@ const Dashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
-                    <InputLabel>Sort by</InputLabel>
+                    <InputLabel>{t('dashboard.sortBy', language)}</InputLabel>
                     <Select
-                      label="Sort by"
+                      label={t('dashboard.sortBy', language)}
                       value={filters.sortBy}
                       onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
                     >
-                      <MenuItem value="recent">Recent</MenuItem>
-                      <MenuItem value="stars">Stars</MenuItem>
-                      <MenuItem value="forks">Forks</MenuItem>
-                      <MenuItem value="commits">Commits</MenuItem>
-                      <MenuItem value="hours">Hours</MenuItem>
-                      <MenuItem value="name">Name</MenuItem>
+                      <MenuItem value="recent">{t('dashboard.recent', language)}</MenuItem>
+                      <MenuItem value="stars">{t('dashboard.stars', language)}</MenuItem>
+                      <MenuItem value="forks">{t('dashboard.forks', language)}</MenuItem>
+                      <MenuItem value="commits">{t('dashboard.commits', language)}</MenuItem>
+                      <MenuItem value="hours">{t('dashboard.hours', language)}</MenuItem>
+                      <MenuItem value="name">{t('dashboard.name', language)}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -226,22 +234,22 @@ const Dashboard = () => {
                     onChange={(e, v) => v && setFilters(prev => ({ ...prev, sortOrder: v }))}
                     fullWidth
                   >
-                    <ToggleButton value="asc">Asc</ToggleButton>
-                    <ToggleButton value="desc">Desc</ToggleButton>
+                    <ToggleButton value="asc">{t('dashboard.asc', language)}</ToggleButton>
+                    <ToggleButton value="desc">{t('dashboard.desc', language)}</ToggleButton>
                   </ToggleButtonGroup>
                 </Grid>
                 <Grid item xs={12} sm={6} md={12}>
                   <FormControlLabel
                     control={<Switch checked={filters.inactiveOnly} onChange={(e) => setFilters(prev => ({ ...prev, inactiveOnly: e.target.checked }))} />}
-                    label="Show inactive projects only (no activity in 3+ months)"
+                    label={t('dashboard.showInactiveOnly', language)}
                   />
                 </Grid>
               </Grid>
 
               <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Chip icon={<StarIcon />} label={`Total Stars: ${totals.stars}`} />
-                <Chip icon={<ForkIcon />} label={`Total Forks: ${totals.forks}`} />
-                <Chip icon={<SortIcon />} label={`${filteredResults.length} of ${analysisResults.length} projects`} />
+                <Chip icon={<StarIcon />} label={`${t('dashboard.totalStars', language)}: ${totals.stars}`} />
+                <Chip icon={<ForkIcon />} label={`${t('dashboard.totalForks', language)}: ${totals.forks}`} />
+                <Chip icon={<SortIcon />} label={t('dashboard.projectsCount', language, { filtered: filteredResults.length, total: analysisResults.length })} />
               </Box>
               </CardContent>
             </Card>
@@ -255,30 +263,76 @@ const Dashboard = () => {
         )}
 
         {/* Show message if no analysis results */}
-        {analysisResults.length === 0 && (
+        {analysisResults.length === 0 && !loading && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <GitHubIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            {/* If we have env vars, show different message */}
+            {(ENV.GITHUB_USERNAME || ENV.GITHUB_TOKEN) && repositories.length > 0 ? (
+              <>
+                <GitHubIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h5" gutterBottom color="text.secondary">
+                  {t('dashboard.reposLoaded', language)}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  {t('dashboard.reposLoadedMessage', language, { count: repositories.length })}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  size="large"
+                  onClick={handleGoToConfiguration}
+                  startIcon={<SettingsIcon />}
+                >
+                  {t('dashboard.goToConfig', language)}
+                </Button>
+              </>
+            ) : (ENV.GITHUB_USERNAME || ENV.GITHUB_TOKEN) && loading ? (
+              <>
+                <CircularProgress size={64} sx={{ mb: 2 }} />
+                <Typography variant="h5" gutterBottom color="text.secondary">
+                  {t('dashboard.loadingRepos', language)}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  {t('dashboard.loadingReposMessage', language)}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <GitHubIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h5" gutterBottom color="text.secondary">
+                  {t('dashboard.welcome', language)}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  {t('dashboard.welcomeMessage', language)}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  size="large"
+                  onClick={handleGoToConfiguration}
+                  startIcon={<SettingsIcon />}
+                >
+                  {t('dashboard.goToConfiguration', language)}
+                </Button>
+              </>
+            )}
+          </Box>
+        )}
+
+        {/* Loading state when auto-loading with env vars */}
+        {loading && analysisResults.length === 0 && (ENV.GITHUB_USERNAME || ENV.GITHUB_TOKEN) && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <CircularProgress size={64} sx={{ mb: 2 }} />
             <Typography variant="h5" gutterBottom color="text.secondary">
-              Welcome to ChronoDev Dashboard
+              {t('dashboard.loadingRepos', language)}
             </Typography>
             <Typography variant="body1" color="text.secondary" paragraph>
-              Configure your GitHub repositories and analysis settings to get started.
+              {t('dashboard.loadingReposMessage', language)}
             </Typography>
-            <Button 
-              variant="contained" 
-              size="large"
-              onClick={handleGoToConfiguration}
-              startIcon={<SettingsIcon />}
-            >
-              Go to Configuration
-            </Button>
           </Box>
         )}
 
         {/* Advanced Metrics */}
         {analysisResults.length > 0 && (
           <CollapsibleSection 
-            title="Advanced Productivity Metrics" 
+            title={t('dashboard.advancedMetrics', language)} 
             icon={<AssessmentIcon />}
             defaultExpanded={false}
           >
@@ -289,87 +343,36 @@ const Dashboard = () => {
       {/* Summary Statistics */}
       {analysisResults.length > 0 && (
         <CollapsibleSection 
-          title="Summary Statistics" 
+          title={t('dashboard.summaryStatistics', language)} 
           icon={<CommitIcon />}
           defaultExpanded={true}
         >
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Code color="primary" />
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {totalProjects}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Projects
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <TrendingUp color="primary" />
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {totalCommits}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Commits
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Schedule color="primary" />
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {Math.round(totalHours)}h
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Estimated Hours
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <TrendingUp color="success" />
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {avgCommitsPerProject}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Avg Commits/Project
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+          <Box sx={{ mb: 4 }}>
+            <SummaryStatistics
+              totalProjects={totalProjects}
+              totalCommits={totalCommits}
+              totalHours={totalHours}
+              avgCommitsPerProject={avgCommitsPerProject}
+            />
+          </Box>
+        </CollapsibleSection>
+      )}
+
+      {/* Top Projects Rankings */}
+      {analysisResults.length > 0 && (
+        <CollapsibleSection 
+          title={t('dashboard.topProjectsRankings', language)} 
+          icon={<TrophyIcon />}
+          defaultExpanded={true}
+        >
+          <TopProjectsRanking analysisResults={analysisResults} />
         </CollapsibleSection>
       )}
 
       {/* Charts Section */}
       {filteredResults.length > 0 && (
         <CollapsibleSection 
-          title="Weekly Activity Charts" 
+          title={t('dashboard.weeklyActivityCharts', language)} 
           icon={<TimelineIcon />}
           defaultExpanded={true}
         >
@@ -380,13 +383,10 @@ const Dashboard = () => {
       {/* Project Details */}
       {filteredResults.length > 0 && (
         <CollapsibleSection 
-          title="Project Details" 
+          title={t('dashboard.projectDetails', language)} 
           icon={<CalendarIcon />}
           defaultExpanded={true}
         >
-          <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-            Project Details
-          </Typography>
           <Grid container spacing={3}>
             {filteredResults.map((project, index) => (
               <Grid item xs={12} md={6} lg={4} key={index}>
@@ -396,6 +396,9 @@ const Dashboard = () => {
           </Grid>
         </CollapsibleSection>
       )}
+
+      {/* Footer */}
+      <Footer />
     </Container>
     </>
   );

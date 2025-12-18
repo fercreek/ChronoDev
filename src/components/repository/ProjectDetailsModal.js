@@ -16,7 +16,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  useTheme,
 } from '@mui/material';
 import {
   Code,
@@ -32,7 +31,6 @@ import {
 import moment from 'moment';
 
 const ProjectDetailsModal = ({ open, onClose, project, analysis }) => {
-  const theme = useTheme();
 
   if (!project || !analysis) return null;
 

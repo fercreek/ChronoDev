@@ -23,7 +23,8 @@ export const useDashboard = () => {
     analysisResults: [],
     loading: false,
     error: null,
-    autoLoaded: false
+    autoLoaded: false,
+    autoAnalyzed: false
   });
 
   // GitHub service instance
@@ -33,18 +34,6 @@ export const useDashboard = () => {
   useEffect(() => {
     githubService.updateToken(state.githubToken);
   }, [state.githubToken, githubService]);
-
-  // Auto-load repositories on mount if username is available
-  useEffect(() => {
-    if (ENV.GITHUB_USERNAME && !state.autoLoaded) {
-      setState(prev => ({ ...prev, autoLoaded: true }));
-      loadGitHubRepositories();
-      
-      if (defaultRepos.length > 0) {
-        setTimeout(() => analyzeRepositories(), 1000);
-      }
-    }
-  }, [ENV.GITHUB_USERNAME, state.autoLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Load GitHub repositories for the current user
@@ -114,6 +103,44 @@ export const useDashboard = () => {
       }));
     }
   }, [state.selectedRepos, state.author, state.dateRange, githubService]);
+
+  // Auto-load repositories on mount if username is available
+  useEffect(() => {
+    if (ENV.GITHUB_USERNAME && !state.autoLoaded) {
+      setState(prev => ({ ...prev, autoLoaded: true }));
+      loadGitHubRepositories();
+      
+      // Auto-analyze if we have default repos
+      if (defaultRepos.length > 0) {
+        setTimeout(() => {
+          analyzeRepositories();
+          setState(prev => ({ ...prev, autoAnalyzed: true }));
+        }, 2000);
+      }
+    }
+  }, [ENV.GITHUB_USERNAME, state.autoLoaded, loadGitHubRepositories, analyzeRepositories, defaultRepos.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-analyze repositories when they're loaded and we have env vars but no analysis yet
+  useEffect(() => {
+    const shouldAutoAnalyze = 
+      ENV.GITHUB_USERNAME && 
+      state.repositories.length > 0 && 
+      state.analysisResults.length === 0 &&
+      !state.loading &&
+      state.selectedRepos.length > 0 &&
+      !state.autoAnalyzed &&
+      state.autoLoaded;
+
+    if (shouldAutoAnalyze) {
+      // If we have selected repos but no analysis, try to analyze
+      const timer = setTimeout(() => {
+        analyzeRepositories();
+        setState(prev => ({ ...prev, autoAnalyzed: true }));
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [state.repositories.length, state.analysisResults.length, state.loading, state.selectedRepos.length, state.autoAnalyzed, state.autoLoaded, analyzeRepositories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Update a specific state field

@@ -12,18 +12,24 @@ import {
   Toolbar,
   IconButton,
   Tooltip,
+  Chip,
+  Stack,
 } from '@mui/material';
 import {
   GitHub as GitHubIcon,
   Settings as SettingsIcon,
   Analytics as AnalyticsIcon,
   ArrowBack as ArrowBackIcon,
+  CheckCircle as CheckCircleIcon,
+  VpnKey as VpnKeyIcon,
 } from '@mui/icons-material';
 
 import { useDashboard } from '../../hooks/useDashboard';
 import { RepositorySelector } from '../repository';
 import CollapsibleSection from '../common/CollapsibleSection';
 import ThemeToggle from '../common/ThemeToggle';
+import Footer from '../common/Footer';
+import { ENV } from '../../constants';
 
 const ConfigurationView = ({ onBackToDashboard }) => {
   const {
@@ -104,6 +110,53 @@ const ConfigurationView = ({ onBackToDashboard }) => {
           icon={<GitHubIcon />}
           defaultExpanded={true}
         >
+          {/* Environment Variables Indicator */}
+          {(ENV.GITHUB_USERNAME || ENV.GITHUB_TOKEN) && (
+            <Alert 
+              severity="info" 
+              icon={<VpnKeyIcon />}
+              sx={{ mb: 3 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Variables de entorno detectadas:
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+                {ENV.GITHUB_USERNAME && (
+                  <Chip 
+                    icon={<CheckCircleIcon />}
+                    label={`Username: ${ENV.GITHUB_USERNAME}`}
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                  />
+                )}
+                {ENV.GITHUB_TOKEN && (
+                  <Chip 
+                    icon={<CheckCircleIcon />}
+                    label="Token configurado"
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                  />
+                )}
+                {ENV.DEFAULT_REPOS.length > 0 && (
+                  <Chip 
+                    icon={<CheckCircleIcon />}
+                    label={`${ENV.DEFAULT_REPOS.length} repositorio(s) por defecto`}
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                  />
+                )}
+              </Stack>
+              <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                Los valores de las variables de entorno se cargan automáticamente. Puedes modificarlos aquí si lo deseas.
+              </Typography>
+            </Alert>
+          )}
+
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -112,6 +165,18 @@ const ConfigurationView = ({ onBackToDashboard }) => {
                 value={githubUsername}
                 onChange={handleFieldChange('githubUsername')}
                 margin="normal"
+                helperText={
+                  ENV.GITHUB_USERNAME 
+                    ? `Cargado desde REACT_APP_GITHUB_USERNAME: ${ENV.GITHUB_USERNAME}` 
+                    : 'Ingresa tu nombre de usuario de GitHub'
+                }
+                InputProps={{
+                  endAdornment: ENV.GITHUB_USERNAME && githubUsername === ENV.GITHUB_USERNAME ? (
+                    <Tooltip title="Valor desde variable de entorno">
+                      <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -122,7 +187,18 @@ const ConfigurationView = ({ onBackToDashboard }) => {
                 value={githubToken}
                 onChange={handleFieldChange('githubToken')}
                 margin="normal"
-                helperText="For private repos and higher rate limits"
+                helperText={
+                  ENV.GITHUB_TOKEN
+                    ? "Token cargado desde REACT_APP_GITHUB_TOKEN (oculto por seguridad)"
+                    : "Para repos privados y límites de rate más altos"
+                }
+                InputProps={{
+                  endAdornment: ENV.GITHUB_TOKEN && githubToken === ENV.GITHUB_TOKEN ? (
+                    <Tooltip title="Token desde variable de entorno">
+                      <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -251,6 +327,9 @@ const ConfigurationView = ({ onBackToDashboard }) => {
           </Grid>
         </CollapsibleSection>
       </Container>
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 };
